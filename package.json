@@ -1,13 +1,46 @@
 {
   "name": "agni-sdk",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "An open-source TypeScript AI Agent SDK built from scratch",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,json,md}": [
+      "prettier --write"
+    ],
+    "*.{ts,tsx,js}": [
+      "eslint --fix"
+    ]
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.33.0"
+  "packageManager": "pnpm@10.33.0",
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "eslint": "^10.8.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.3.0",
+    "prettier": "^3.9.6",
+    "tsup": "^8.5.1",
+    "tsx": "^4.23.1",
+    "typescript": "^7.0.2",
+    "typescript-eslint": "^8.65.0",
+    "vitest": "^4.1.10"
+  },
+  "dependencies": {
+    "nanoid": "^6.0.0",
+    "zod": "^4.4.3"
+  }
 }
