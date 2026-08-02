@@ -8,7 +8,7 @@ export default [
 
   {
     ignores: ['dist', 'node_modules'],
-
+    files: ['examples/**/*.ts', 'spikes/**/*.ts'],
     rules: {
       // Disable JS rule
       'no-unused-vars': 'off',

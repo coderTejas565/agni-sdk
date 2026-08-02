@@ -27,7 +27,7 @@ export type { ToolDefinition } from './tools/tool.js';
 
 // Providers
 
-export { GeminiProvider } from './providers/gemini.provider.js';
+export * from './providers/gemini/gemini.provider.js';
 
 export type { ModelProvider, ProviderInfo } from './providers/provider.interface.js';
 

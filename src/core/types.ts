@@ -1,41 +1,125 @@
 /**
  * Core shared types for Agni SDK.
  *
- * This file contains provider-agnostic
- * contracts used across the SDK.
+ * Provider-agnostic contracts used
+ * throughout the Runtime.
  */
 
+/* -------------------------------------------------------------------------- */
+/*                                  Messages                                  */
+/* -------------------------------------------------------------------------- */
+
 /**
- * Represents a message exchanged
- * between user, model, and tools.
+ * Every conversation consists of
+ * ordered Messages.
  */
-export interface Message {
-  readonly role: MessageRole;
+export type Message =
+  SystemMessage | UserMessage | AssistantMessage | ToolCallMessage | ToolResultMessage;
 
-  readonly content: string | MessageContent[];
-}
+/**
+ * System instructions.
+ */
+export interface SystemMessage {
+  role: 'system';
 
-export type MessageRole = 'system' | 'user' | 'assistant' | 'tool';
-
-export interface MessageContent {
-  type: 'text';
-
-  text: string;
+  content: string;
 }
 
 /**
- * Represents a request sent
- * to a model provider.
+ * User input.
+ */
+export interface UserMessage {
+  role: 'user';
+
+  content: string;
+}
+
+/**
+ * Normal assistant response.
+ */
+export interface AssistantMessage {
+  role: 'assistant';
+
+  content: string;
+}
+
+/**
+ * Assistant requesting a tool.
+ */
+export interface ToolCallMessage {
+  role: 'assistant';
+
+  toolCall: ToolCall;
+}
+
+/**
+ * Tool execution result.
+ */
+export interface ToolResultMessage {
+  role: 'tool';
+
+  toolResult: ToolResult;
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                   Tools                                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Tool requested by the model.
+ */
+export interface ToolCall {
+  /**
+   * Provider generated id.
+   */
+  id?: string;
+
+  /**
+   * Tool name.
+   */
+  name: string;
+
+  /**
+   * Tool arguments.
+   */
+  arguments: Record<string, unknown>;
+}
+
+/**
+ * Tool execution output.
+ */
+export interface ToolResult {
+  /**
+   * Matches ToolCall.id when provided.
+   */
+  toolCallId?: string;
+
+  /**
+   * Tool name.
+   */
+  name: string;
+
+  /**
+   * Serialized tool output.
+   */
+  output: unknown;
+}
+
+/* -------------------------------------------------------------------------- */
+/*                              Provider Request                              */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Runtime → Provider request.
  */
 export interface ModelRequest {
+  /**
+   * Complete conversation history.
+   */
   messages: Message[];
 
   /**
-   * Tools available for this request.
-   *
-   * Provider adapters convert
-   * these into provider-specific
-   * tool formats.
+   * Available tools.
    */
   tools?: ProviderToolDefinition[];
 
@@ -47,16 +131,10 @@ export interface ModelRequest {
 }
 
 /**
- * Provider-facing tool metadata.
+ * Metadata exposed to providers.
  *
- * This is intentionally different
- * from the executable Tool contract.
- *
- * Runtime tools live in:
- *
- * src/tools/tool.ts
- *
- * Providers only need metadata.
+ * Runtime owns executable Tool objects.
+ * Providers only receive metadata.
  */
 export interface ProviderToolDefinition {
   name: string;
@@ -66,41 +144,39 @@ export interface ProviderToolDefinition {
   parameters: unknown;
 }
 
+/* -------------------------------------------------------------------------- */
+/*                             Provider Response                              */
+/* -------------------------------------------------------------------------- */
+
 /**
- * Normalized response returned
- * from any provider.
- *
- * Runtime never understands:
- *
- * Gemini Candidate
- * OpenAI Choice
- * Anthropic ContentBlock
+ * Provider → Runtime response.
  */
-export interface ModelResponse {
-  type: 'text' | 'tool_call';
+export type ModelResponse = TextResponse | ToolCallResponse;
 
-  content?: string;
+/**
+ * Normal model output.
+ */
+export interface TextResponse {
+  type: 'text';
 
-  toolCalls?: ToolCall[];
+  content: string;
 }
 
 /**
- * Represents a model requested
- * tool execution.
+ * Model requesting tool execution.
  */
-export interface ToolCall {
-  id?: string;
+export interface ToolCallResponse {
+  type: 'tool_call';
 
-  name: string;
-
-  arguments: Record<string, unknown>;
+  toolCalls: ToolCall[];
 }
+
+/* -------------------------------------------------------------------------- */
+/*                               Utility Types                                */
+/* -------------------------------------------------------------------------- */
 
 /**
  * Generic async result.
- *
- * Used where failure is expected
- * and should be handled explicitly.
  */
 export type AsyncResult<T> = Promise<
   | {

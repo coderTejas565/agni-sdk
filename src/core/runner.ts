@@ -186,9 +186,15 @@ export class Runner<TContext = unknown> {
           }
 
           messages.push({
-            role: 'tool' as const,
+            role: 'tool',
 
-            content: JSON.stringify(result.output),
+            toolResult: {
+              toolCallId: call.id,
+
+              name: call.name,
+
+              output: result.output,
+            },
           });
         }
       }
