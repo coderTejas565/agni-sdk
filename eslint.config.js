@@ -10,7 +10,17 @@ export default [
     ignores: ['dist', 'node_modules'],
 
     rules: {
-      'no-unused-vars': 'error',
+      // Disable JS rule
+      'no-unused-vars': 'off',
+
+      // Use TypeScript-aware rule
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+        },
+      ],
+
       'no-console': 'warn',
     },
   },
