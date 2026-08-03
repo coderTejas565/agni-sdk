@@ -1,25 +1,54 @@
 # Agni Agent SDK
 
-Agni Agent SDK is a TypeScript-first framework for building AI agents with tool calling and provider abstraction.
+<p align="center">
+  <img src="https://img.shields.io/npm/v/agni-agent-sdk" alt="npm version" />
+  <img src="https://img.shields.io/npm/dm/agni-agent-sdk" alt="npm downloads" />
+  <img src="https://img.shields.io/github/license/coderTejas565/agni-sdk" alt="license" />
+  <img src="https://img.shields.io/node/v/agni-agent-sdk" alt="node version" />
+</p>
 
-It provides a lightweight runtime for creating production-ready AI agents while keeping providers, tools, and execution logic decoupled.
+Agni Agent SDK is a TypeScript-first framework for building reliable AI agents with tool calling, provider abstraction, and a modular runtime architecture.
 
-## Features
+It provides the core building blocks required to create AI applications where agents, models, tools, and execution logic remain independent and composable.
 
-- TypeScript-first API
-- Provider abstraction
-- Tool calling runtime
-- Execution context
-- Runtime limits
-- Event system
-- Extensible architecture
-- ESM and CommonJS support
+> Status: Early Preview (v1.0.0)
 
-> **Status:** Early Preview (v1.0.0)
+Agni Agent SDK is actively evolving. APIs may change as the framework matures.
 
-Agni Agent SDK is under active development. The public API may evolve in future releases.
+---
 
-## Installation
+## Why Agni?
+
+Building AI agents often requires managing:
+
+- Model communication
+- Tool execution
+- Conversation state
+- Runtime control
+- Provider differences
+- Execution lifecycle
+
+Agni abstracts these concerns into a clean runtime so developers can focus on building agent applications.
+
+```
+Application
+    |
+    v
+Agent
+    |
+    v
+Agni Runtime
+    |
+    +----------------+
+    |                |
+ Provider          Tools
+    |                |
+ Gemini        External APIs
+```
+
+---
+
+# Installation
 
 ```bash
 npm install agni-agent-sdk
@@ -39,7 +68,9 @@ yarn add agni-agent-sdk
 
 ---
 
-## Quick Start
+# Quick Start
+
+Create your first AI agent:
 
 ```ts
 import 'dotenv/config';
@@ -60,7 +91,7 @@ const agent = new Agent({
 
 const runner = new Runner();
 
-const result = await runner.run(agent, 'Explain what an AI agent is.', {
+const result = await runner.run(agent, 'Explain how AI agents work.', {
   context: {},
 });
 
@@ -69,9 +100,26 @@ console.log(result.output);
 
 ---
 
-## Tool Calling
+# Core Concepts
 
-Register tools directly on an Agent.
+Agni is built around a few simple primitives:
+
+| Component  | Responsibility                     |
+| ---------- | ---------------------------------- |
+| Agent      | Defines behavior and capabilities  |
+| Runner     | Executes the agent lifecycle       |
+| Provider   | Connects to language models        |
+| Tool       | Gives agents external capabilities |
+| RunContext | Stores execution-specific data     |
+| Events     | Observes runtime activity          |
+
+---
+
+# Tool Calling
+
+Agents can use external tools to perform actions.
+
+Example:
 
 ```ts
 import type { Tool } from 'agni-agent-sdk';
@@ -79,7 +127,7 @@ import type { Tool } from 'agni-agent-sdk';
 const weatherTool: Tool = {
   name: 'get_weather',
 
-  description: 'Returns the weather for a city.',
+  description: 'Returns weather information for a city.',
 
   parameters: {
     type: 'object',
@@ -96,20 +144,22 @@ const weatherTool: Tool = {
   async execute({ city }) {
     return {
       city,
+
       temperature: 29,
+
       condition: 'Sunny',
     };
   },
 };
 ```
 
-Attach the tool to an Agent.
+Attach tools to an agent:
 
 ```ts
 const agent = new Agent({
-  name: 'weather',
+  name: 'weather-agent',
 
-  instructions: 'Always use the weather tool when answering weather questions.',
+  instructions: 'Use tools when required.',
 
   provider,
 
@@ -117,25 +167,15 @@ const agent = new Agent({
 });
 ```
 
-Run the agent.
-
-```ts
-const result = await runner.run(agent, 'What is the weather in Pune?', {
-  context: {},
-});
-```
-
 ---
 
-## Providers
+# Providers
 
-Agni SDK communicates with language models through provider adapters.
+Agni uses provider adapters to communicate with different AI models.
 
-Currently supported providers:
+Currently supported:
 
 - Gemini
-
-Additional providers such as OpenAI and Anthropic are planned for future releases.
 
 Example:
 
@@ -145,116 +185,103 @@ const provider = new GeminiProvider({
 });
 ```
 
-The runtime depends only on the provider interface, allowing additional providers to be added without changing application code.
+The runtime depends only on the provider interface, making additional model providers easy to integrate.
+
+Planned providers:
+
+- OpenAI
+- Anthropic
 
 ---
 
-## Agent
+# Runtime Execution
 
-An Agent is an immutable configuration object.
+The Runner manages the complete agent lifecycle:
 
-It contains:
-
-- Name
-- Instructions
-- Provider
-- Tools
-- Runtime limits
-- Provider options
+- Creates execution context
+- Sends requests to providers
+- Handles tool calls
+- Tracks execution turns
+- Returns normalized results
+- Publishes runtime events
 
 Example:
 
 ```ts
-const agent = new Agent({
-  name: 'assistant',
+const result = await runner.run(
+  agent,
 
-  instructions: 'You are helpful.',
+  'What is the weather in Pune?',
 
-  provider,
-});
-```
-
----
-
-## Runner
-
-Runner is responsible for execution.
-
-Responsibilities include:
-
-- Managing conversation history
-- Calling the provider
-- Executing tools
-- Applying runtime limits
-- Returning normalized results
-- Publishing runtime events
-
-Example:
-
-```ts
-const runner = new Runner();
-
-const result = await runner.run(agent, 'Hello', {
-  context: {},
-});
-```
-
----
-
-## Execution Context
-
-Context contains application-specific runtime data.
-
-Example:
-
-```ts
-await runner.run(agent, prompt, {
-  context: {
-    userId: '123',
-    workspaceId: 'abc',
+  {
+    context: {},
   },
-});
+);
 ```
-
-Tools receive the same context during execution.
 
 ---
 
-## Result
+# Execution Context
+
+Context allows applications to pass runtime data into tools and workflows.
+
+Example:
+
+```ts
+await runner.run(
+  agent,
+
+  'Hello',
+
+  {
+    context: {
+      userId: '123',
+      workspaceId: 'abc',
+    },
+  },
+);
+```
+
+---
+
+# Results
 
 Every execution returns a normalized result.
 
+Success:
+
 ```ts
 {
-  success: true,
+  success:true,
 
-  output: "...",
+  output:"Agent response",
 
-  metadata: {
-    runId: "...",
-    turns: 2,
+  metadata:{
+    runId:"...",
+    turns:2
   }
 }
 ```
 
-On failure:
+Failure:
 
 ```ts
 {
-  success: false,
+  success:false,
 
-  error: {
-    type: "...",
-    message: "...",
+  error:{
+    type:"provider_error",
+
+    message:"..."
   }
 }
 ```
 
 ---
 
-## Runtime Events
+# Runtime Events
 
-The Runner exposes an event bus.
+Agni exposes an event system for observing execution.
 
 ```ts
 runner.events.on('tool.called', (event) => {
@@ -262,7 +289,7 @@ runner.events.on('tool.called', (event) => {
 });
 ```
 
-Examples of events include:
+Available events:
 
 - agent.started
 - turn.started
@@ -274,88 +301,102 @@ Examples of events include:
 
 ---
 
-## Architecture
+# Architecture
 
-Agni SDK separates responsibilities into dedicated modules.
+Agni follows a modular runtime architecture.
 
 ```
-Agent
-   │
-Runner
-   │
-Provider
-   │
-Tool Registry
-   │
-Tool Executor
-   │
-Result
+                 Application
+
+                     |
+
+                   Agent
+
+                     |
+
+                  Runner
+
+                     |
+
+              Provider Interface
+
+             /                \
+
+        Gemini              Tools
+
+                             |
+
+                       Tool Executor
+
+                             |
+
+                           Result
 ```
 
-This architecture makes providers and tools independent from the runtime implementation.
+This separation allows providers and tools to evolve independently.
 
 ---
 
-## Project Structure
+# Project Structure
 
 ```
 src/
- ├── core/
- ├── providers/
- ├── tools/
- ├── streaming/
- ├── errors/
- ├── utils/
- └── index.ts
+├── core/
+│   ├── agent.ts
+│   ├── runner.ts
+│   ├── run-context.ts
+│   └── types.ts
+│
+├── providers/
+│   └── gemini/
+│
+├── tools/
+│
+├── streaming/
+│
+├── errors/
+│
+└── index.ts
 ```
 
 ---
 
-## Requirements
+# Requirements
 
 - Node.js 18+
 - TypeScript 5+
 
 ---
 
-## Documentation
+# Roadmap
 
-Documentation is currently under development.
-
-In the meantime, refer to the examples in this repository to get started.
-
----
-
-## Roadmap
-
-Planned features include:
+Future releases will introduce:
 
 - OpenAI provider
 - Anthropic provider
 - Streaming responses
-- Memory
+- Memory and sessions
 - Guardrails
 - Structured outputs
-- Multi-agent orchestration
-- Tracing
-- Handoffs
+- Multi-agent workflows
+- Tracing and observability
 
 ---
 
-## Contributing
+# Contributing
 
 Contributions are welcome.
 
-If you find a bug or have an idea for a new feature, please open an issue or submit a pull request.
+If you find bugs, have feature ideas, or want to improve Agni, please open an issue or submit a pull request.
 
 ---
 
-## Repository
+# Repository
 
 https://github.com/coderTejas565/agni-sdk
 
 ---
 
-## License
+# License
 
 MIT
