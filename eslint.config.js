@@ -1,27 +1,46 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
+import globals from 'globals';
 
 export default [
+  // Ignore folders globally
+  {
+    ignores: ['dist/**', 'node_modules/**', 'coverage/**', 'apps/**', 'architecture/**'],
+  },
+
   eslint.configs.recommended,
 
   ...tseslint.configs.recommended,
 
   {
-    ignores: ['dist', 'node_modules'],
-    files: ['examples/**/*.ts', 'spikes/**/*.ts'],
+    files: ['**/*.ts'],
+
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+
     rules: {
       // Disable JS rule
       'no-unused-vars': 'off',
 
-      // Use TypeScript-aware rule
+      // Use TS-aware rule
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
           argsIgnorePattern: '^_',
         },
       ],
+    },
+  },
 
-      'no-console': 'warn',
+  // Examples & spikes
+  {
+    files: ['examples/**/*.ts', 'spikes/**/*.ts'],
+
+    rules: {
+      'no-console': 'off',
     },
   },
 ];
