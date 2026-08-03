@@ -13,6 +13,8 @@
  *  |
  * Tool Execution
  *  |
+ * Events
+ *  |
  * Final Result
  */
 
@@ -30,6 +32,12 @@ import { ToolExecutor } from '../tools/tool-executor.js';
 
 import { createId } from '../utils/id.js';
 
+import { EventBus } from '../streaming/event-bus.js';
+
+import type { AgniEvent } from '../streaming/events.js';
+
+import { ProviderError, ToolExecutionError } from '../errors/agni-errors.js';
+
 export interface RunOptions<TContext> {
   context: TContext;
 }
@@ -39,10 +47,21 @@ export class Runner<TContext = unknown> {
 
   private readonly toolExecutor: ToolExecutor<TContext>;
 
-  constructor() {
+  private readonly eventBus: EventBus;
+
+  constructor(eventBus?: EventBus) {
+    this.eventBus = eventBus ?? new EventBus();
+
     this.toolRegistry = new ToolRegistry<TContext>();
 
     this.toolExecutor = new ToolExecutor(this.toolRegistry);
+  }
+
+  /**
+   * Access runtime events.
+   */
+  public get events(): EventBus {
+    return this.eventBus;
   }
 
   async run<TOutput = string>(
@@ -56,6 +75,16 @@ export class Runner<TContext = unknown> {
       context: options.context,
 
       runId: createId(),
+    });
+
+    this.emit({
+      type: 'agent.started',
+
+      runId: context.runId,
+
+      timestamp: Date.now(),
+
+      agentName: agent.name,
     });
 
     for (const tool of agent.tools) {
@@ -83,14 +112,18 @@ export class Runner<TContext = unknown> {
     ];
 
     while (true) {
-      /**
-       * Increment execution cycle.
-       */
       context.incrementTurn();
 
-      /**
-       * Check execution limit.
-       */
+      this.emit({
+        type: 'turn.started',
+
+        runId: context.runId,
+
+        timestamp: Date.now(),
+
+        turn: context.turn,
+      });
+
       if (agent.limits?.maxTurns && context.turn > agent.limits.maxTurns) {
         return {
           success: false,
@@ -112,6 +145,18 @@ export class Runner<TContext = unknown> {
       let response;
 
       try {
+        this.emit({
+          type: 'provider.request',
+
+          runId: context.runId,
+
+          timestamp: Date.now(),
+
+          provider: agent.provider.info.name,
+
+          model: agent.provider.info.model,
+        });
+
         response = await agent.provider.generate({
           messages,
 
@@ -119,14 +164,33 @@ export class Runner<TContext = unknown> {
 
           providerOptions: agent.providerOptions,
         });
+
+        this.emit({
+          type: 'provider.response',
+
+          runId: context.runId,
+
+          timestamp: Date.now(),
+
+          provider: agent.provider.info.name,
+
+          model: agent.provider.info.model,
+        });
       } catch (error) {
+        const providerError =
+          error instanceof ProviderError
+            ? error
+            : new ProviderError(error instanceof Error ? error.message : String(error));
+
         return {
           success: false,
 
           error: {
             type: 'provider_error',
 
-            message: error instanceof Error ? error.message : String(error),
+            message: providerError.message,
+
+            metadata: providerError.metadata,
           },
 
           metadata: {
@@ -137,10 +201,17 @@ export class Runner<TContext = unknown> {
         };
       }
 
-      /**
-       * Final text response.
-       */
       if (response.type === 'text') {
+        this.emit({
+          type: 'agent.completed',
+
+          runId: context.runId,
+
+          timestamp: Date.now(),
+
+          success: true,
+        });
+
         return {
           success: true,
 
@@ -154,11 +225,20 @@ export class Runner<TContext = unknown> {
         };
       }
 
-      /**
-       * Tool execution flow.
-       */
       if (response.type === 'tool_call') {
         for (const call of response.toolCalls ?? []) {
+          this.emit({
+            type: 'tool.called',
+
+            runId: context.runId,
+
+            timestamp: Date.now(),
+
+            toolName: call.name,
+
+            arguments: call.arguments,
+          });
+
           const result = await this.toolExecutor.execute(
             call.name,
 
@@ -167,14 +247,32 @@ export class Runner<TContext = unknown> {
             context,
           );
 
+          this.emit({
+            type: 'tool.completed',
+
+            runId: context.runId,
+
+            timestamp: Date.now(),
+
+            toolName: call.name,
+
+            success: result.success,
+          });
+
           if (!result.success) {
+            const toolError = new ToolExecutionError(result.error.message, {
+              toolName: call.name,
+            });
+
             return {
               success: false,
 
               error: {
                 type: 'tool_error',
 
-                message: result.error.message,
+                message: toolError.message,
+
+                metadata: toolError.metadata,
               },
 
               metadata: {
@@ -199,5 +297,9 @@ export class Runner<TContext = unknown> {
         }
       }
     }
+  }
+
+  private emit(event: AgniEvent): void {
+    this.eventBus.emit(event);
   }
 }

@@ -5,7 +5,11 @@ export default defineConfig({
 
   format: ['esm', 'cjs'],
 
-  dts: true,
+  dts: {
+    compilerOptions: {
+      ignoreDeprecations: '6.0',
+    },
+  },
 
   sourcemap: true,
 

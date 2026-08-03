@@ -5,7 +5,9 @@
  * from this file.
  */
 
+// =====================
 // Core
+// =====================
 
 export { Agent } from './core/agent.js';
 
@@ -17,28 +19,55 @@ export type { RunResult } from './core/run-result.js';
 
 export type {
   Message,
+  SystemMessage,
+  UserMessage,
+  AssistantMessage,
+  ToolCallMessage,
+  ToolResultMessage,
+  ToolCall,
+  ToolResult,
   ModelRequest,
   ModelResponse,
-  ToolCall,
+  TextResponse,
+  ToolCallResponse,
   ProviderToolDefinition,
 } from './core/types.js';
 
-export type { ToolDefinition } from './tools/tool.js';
-
+// =====================
 // Providers
+// =====================
 
 export * from './providers/gemini/gemini.provider.js';
 
 export type { ModelProvider, ProviderInfo } from './providers/provider.interface.js';
 
+// =====================
 // Tools
+// =====================
 
-export type { Tool, ToolDefinition as SDKToolDefinition } from './tools/tool.js';
+export type { Tool, ToolDefinition } from './tools/tool.js';
 
 export { ToolRegistry } from './tools/tool-registry.js';
 
 export { ToolExecutor } from './tools/tool-executor.js';
 
-// Errors
+// =====================
+// Streaming
+// =====================
 
-export { AgniError } from './errors/agni-errors.js';
+export { EventBus } from './streaming/event-bus.js';
+
+export type { AgniEvent, AgentEventType } from './streaming/events.js';
+
+// =====================
+// Errors
+// =====================
+
+export {
+  AgniError,
+  ProviderError,
+  ToolExecutionError,
+  ValidationError,
+  GuardrailError,
+  CancelledError,
+} from './errors/agni-errors.js';
